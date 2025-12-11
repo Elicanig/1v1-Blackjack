@@ -1,0 +1,47 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: blackjack
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  api:
+    build: ./backend
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/blackjack
+      - REDIS_URL=redis://redis:6379
+      - PORT=3000
+      - NODE_ENV=production
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./backend:/usr/src/app
+
+  web:
+    build: ./frontend
+    environment:
+      - VITE_API_BASE=http://localhost:3000
+      - VITE_WS_URL=ws://localhost:3000/ws
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+    volumes:
+      - ./frontend:/usr/src/app
+
+volumes:
+  db_data:
